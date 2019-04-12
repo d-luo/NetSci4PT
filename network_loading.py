@@ -15,7 +15,7 @@ def load_Lspace_graph(folder,city):
     Parameters
     ----------
     folder : string
-        where to save the shapefile, if none, then default folder
+        where to load the csv files for networks
     city : string
         name of the city
     Returns
