@@ -12,7 +12,12 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import seaborn as sns;
 
-def plot_networkwide_accessibility(G_L,df,cb_label,dist_x_label,with_dist,fig_para,city_name,save_pic):
+
+
+def plot_violin_graph():
+    pass
+
+def plot_travel_impedance_map(G_L,df,cb_label,dist_x_label,with_dist,fig_para,city_name,save_pic):
     '''
     some parameters
     '''
@@ -69,9 +74,9 @@ def plot_networkwide_accessibility(G_L,df,cb_label,dist_x_label,with_dist,fig_pa
 
 
 
-def plot_comparison_map(G_L,df,r_value,fig_para,city_name,x_clm,y_clm,diff_clm,save_pic):
+def plot_travel_impedance_comparison_map(G_L,df,r_value,fig_para,city_name,x_clm,y_clm,diff_clm,save_pic):
     """
-    Load the L-space graph stored in csv files into a networkx graph 
+    Plot the map of the comparison between the benchmark and GTC-based metrics
     
     Parameters
     ----------
@@ -120,7 +125,15 @@ def plot_comparison_map(G_L,df,r_value,fig_para,city_name,x_clm,y_clm,diff_clm,s
     if save_pic:
         file_name = city_name + '_cmp.png'
         plt.savefig(file_name, format='png', dpi=300)
-        
+ 
+def add_linreg_residuals(df,x_clm,y_clm,diff_clm):
+    x = df[x_clm]
+    y = df[y_clm]
+    mask = ~np.isnan(x) & ~np.isnan(y)
+    slope, intercept, r_value, p_value, std_err = stats.linregress(x[mask],y[mask])
+    residuals = y - (slope * x + intercept)
+    df[diff_clm] = residuals
+    return df,r_value       
         
 def plot_scatter_comparison(df,r_value,cur_ax,x_clm,y_clm,diff_clm):
     cur_cmap = 'coolwarm'
@@ -143,7 +156,24 @@ def plot_scatter_comparison(df,r_value,cur_ax,x_clm,y_clm,diff_clm):
     cur_str = f"r = {r_value}"
     x = 0.6 * max(df[x_clm].loc[idx_nonnan]) 
     y = 1.2 * min(df[y_clm].loc[idx_nonnan])
-    cur_ax.text(x,y,cur_str,fontsize=10,style='italic')            
+    cur_ax.text(x,y,cur_str,fontsize=10,style='italic')     
+
+
+def plot_network_properties():
+    '''
+    This function makes the following figure: 
+    Figure 3: Illustration of the basic properties of the studied tram networks.
+    '''
+    df = pd.read_csv('tram_networks.csv')
+    
+    fig = plt.figure(figsize=(6,3))
+    ax = fig.add_axes([0.15,0.2,0.6,0.7])
+    #cmap = sns.cubehelix_palette(dark=.3, light=.8, as_cmap=True)
+    ax = sns.scatterplot(x="nStops", y="nLinks", alpha=0.8,hue = '# Routes',size = '# Routes',
+                         sizes=(20, 100),legend = 'full',
+                         data=df)
+    ax.set(xlabel='# Stops', ylabel='# Links')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)       
 
 class MidPointNorm(Normalize):    
     def __init__(self, midpoint=0, vmin=None, vmax=None, clip=False):

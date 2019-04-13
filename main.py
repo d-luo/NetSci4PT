@@ -15,21 +15,14 @@ from network_loading import *
 from sklearn.preprocessing import scale
 from scipy import stats
 from mpl_toolkits.axes_grid1 import AxesGrid
-from method import *
-from plot import *
+from methods import *
+from plots import *
 from utils import *
 
 
     
 
-def add_linreg_residuals(df,x_clm,y_clm,diff_clm):
-    x = df[x_clm]
-    y = df[y_clm]
-    mask = ~np.isnan(x) & ~np.isnan(y)
-    slope, intercept, r_value, p_value, std_err = stats.linregress(x[mask],y[mask])
-    residuals = y - (slope * x + intercept)
-    df[diff_clm] = residuals
-    return df,r_value
+
 
 def gen_results_accessiblility_viz(graph_dict,city_list,city_names):
     '''
@@ -64,14 +57,16 @@ def gen_results_accessiblility_viz(graph_dict,city_list,city_names):
                                  'num_hops':result_dict_unweighted_L['df']['values'],\
                                  'travel_time':result_dict_weighted_P['df']['values']})
         # hop-based 
-        plot_networkwide_accessibility(G_L,result_dict_unweighted_L['df'],\
+        plot_travel_impedance_map(G_L,result_dict_unweighted_L['df'],\
                           'Travel Cost [# hops]','# hops',with_dist,fig_para,city_names[cur_city],save_pic) 
         # GTC-based                  
-        plot_networkwide_accessibility(G_L,result_dict_weighted_P['df'],\
+        plot_travel_impedance_map(G_L,result_dict_weighted_P['df'],\
                           'Travel Cost [min]','min',with_dist,fig_para,city_names[cur_city],save_pic)
         # Comparison    
         final_df,r_value = add_linreg_residuals(final_df,'num_hops','travel_time','residual_of_hops')
-        plot_comparison_map(G_L,final_df,r_value,fig_para,city_names[cur_city],'num_hops','travel_time','residual_of_hops',save_pic) 
+        plot_travel_impedance_comparison_map(G_L,final_df,r_value,fig_para,\
+                                             city_names[cur_city],'num_hops',\
+                                             'travel_time','residual_of_hops',save_pic) 
 
     
 def gen_results_accessiblity_ccdf(graph_dict,city_list,city_names):
