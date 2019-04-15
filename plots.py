@@ -4,18 +4,40 @@ Created on Fri Apr 12 15:54:04 2019
 
 @author: dingluo
 """
-
+from __future__ import division
 from numpy import ma
 from matplotlib import cbook
 from matplotlib.colors import Normalize
+from scipy import stats
 import matplotlib.pyplot as plt
 import networkx as nx
 import seaborn as sns;
+import numpy as np
+from geopy.distance import vincenty
 
 
 
 def plot_violin_graph():
     pass
+
+
+def _add_spatial_scale(ax,df):
+    # add spatial scales for the map
+    max_x = vincenty((min(df['y']),max(df['x'])),(min(df['y']),min(df['x']))).km
+    max_y = vincenty((min(df['y']),max(df['x'])),(max(df['y']),max(df['x']))).km
+    max_x = round(max_x,1)
+    max_y = round(max_y,1)
+    x_str = str(max_x) + ' km'
+    ax.text(0.5, 0.01, x_str,
+        verticalalignment='bottom', horizontalalignment='center',
+        transform=ax.transAxes,color='k', fontsize=11)
+    y_str = str(max_y) + ' km'
+    ax.text(0.0001, 0.5, y_str,
+        verticalalignment='bottom', horizontalalignment='center',rotation = 'vertical',
+        transform=ax.transAxes,color='k', fontsize=11)    
+    return ax
+
+
 
 def plot_travel_impedance_map(G_L,df,cb_label,dist_x_label,with_dist,fig_para,city_name,save_pic):
     '''
@@ -25,7 +47,7 @@ def plot_travel_impedance_map(G_L,df,cb_label,dist_x_label,with_dist,fig_para,ci
     opacity_value = 0.7
     
     fig = plt.figure(figsize=(5,4))
-
+    
     # select NonNaN rows
     idx_nonnan = df['values'].notnull()
     lat_nonnan, lon_nonnan = df['y'].loc[idx_nonnan], df['x'].loc[idx_nonnan]
@@ -35,10 +57,12 @@ def plot_travel_impedance_map(G_L,df,cb_label,dist_x_label,with_dist,fig_para,ci
     lat_nan, lon_nan = df['y'].loc[idx_nan], df['x'].loc[idx_nan]   
     # draw the underlying links first
     pos = nx.get_node_attributes(G_L,'coords')
-    
+
     # ax1 is the major plot
     ax1 = fig.add_axes(fig_para['ax1'])
     ax1.axis('off')
+    ax1 = _add_spatial_scale(ax1,df)
+    
     ax1.set_title(city_name,loc = 'center')
     nx.draw_networkx_edges(G_L,pos,edge_color = '#b7c9e2',width=1,arrows=False,\
                            alpha = opacity_value,ax = ax1)                  
@@ -98,7 +122,7 @@ def plot_travel_impedance_comparison_map(G_L,df,r_value,fig_para,city_name,x_clm
     fig = plt.figure(figsize=(5,4))
     ax1 = fig.add_axes(fig_para['ax1'])
     ax1.axis('off')
-
+    ax1 = _add_spatial_scale(ax1,df)
     ax1.set_title(city_name,loc = 'center')
 
     pos = nx.get_node_attributes(G_L,'coords')
@@ -145,8 +169,8 @@ def plot_scatter_comparison(df,r_value,cur_ax,x_clm,y_clm,diff_clm):
                 scatter = True,scatter_kws = {'s':0.5},line_kws = {'color':'k','linewidth':1},ax = cur_ax)
     cur_ax.scatter(df[x_clm].loc[idx_nonnan],df[y_clm].loc[idx_nonnan],\
                norm = norm, c= df[diff_clm].loc[idx_nonnan], cmap = cur_cmap,s = 2)
-    cur_ax.set_xlabel('# Hops',fontsize=10)
-    cur_ax.set_ylabel('GTC [min]',fontsize=10)
+    cur_ax.set_xlabel('# hops',fontsize=10)
+    cur_ax.set_ylabel('min',fontsize=10)
     cur_ax.tick_params(axis='both', labelsize=8,pad = 0.1)
     cur_ax.yaxis.set_label_position("right")
     cur_ax.yaxis.tick_right()
