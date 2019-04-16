@@ -1,19 +1,19 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Apr 12 15:54:04 2019
+################################################################################
+# Module: plots.py
+# Description: Make all the visualizations appeared in the study
+# Ding Luo @ TU Delft, The Netherlands
+################################################################################
 
-@author: dingluo
-"""
+
 from __future__ import division
 from numpy import ma
 from matplotlib import cbook
 from matplotlib.colors import Normalize
-from scipy import stats
+from geopy.distance import vincenty
 import matplotlib.pyplot as plt
 import networkx as nx
 import seaborn as sns;
 import numpy as np
-from geopy.distance import vincenty
 import pandas as pd
 
 
@@ -108,7 +108,8 @@ def plot_travel_impedance_map(G_L,df,clmstr,cb_label,dist_x_label,city_name,\
 
 
 
-def plot_travel_impedance_comparison_map(G_L,df,r_value,fig_para,city_name,x_clm,y_clm,diff_clm,save_pic):
+def plot_travel_impedance_comparison_map(G_L,df,r_value,city_name,x_clm,y_clm,diff_clm,\
+                                         save_pic = 'True'):
     """
     Plot the map of the comparison between the benchmark and GTC-based metrics
     
@@ -127,6 +128,7 @@ def plot_travel_impedance_comparison_map(G_L,df,r_value,fig_para,city_name,x_clm
     
     orig_cmap = 'coolwarm'
     opacity_value = 0.7
+    fig_para = _set_fig_para()
     norm = MidPointNorm(midpoint=0)
     
     fig = plt.figure(figsize=(5,4))
@@ -158,16 +160,7 @@ def plot_travel_impedance_comparison_map(G_L,df,r_value,fig_para,city_name,x_clm
     
     if save_pic:
         file_name = city_name + '_cmp.png'
-        plt.savefig(file_name, format='png', dpi=300)
- 
-def add_linreg_residuals(df,x_clm,y_clm,diff_clm):
-    x = df[x_clm]
-    y = df[y_clm]
-    mask = ~np.isnan(x) & ~np.isnan(y)
-    slope, intercept, r_value, p_value, std_err = stats.linregress(x[mask],y[mask])
-    residuals = y - (slope * x + intercept)
-    df[diff_clm] = residuals
-    return df,r_value       
+        plt.savefig(file_name, format='png', dpi=300)      
         
 def plot_scatter_comparison(df,r_value,cur_ax,x_clm,y_clm,diff_clm):
     cur_cmap = 'coolwarm'
@@ -179,8 +172,8 @@ def plot_scatter_comparison(df,r_value,cur_ax,x_clm,y_clm,diff_clm):
                 scatter = True,scatter_kws = {'s':0.5},line_kws = {'color':'k','linewidth':1},ax = cur_ax)
     cur_ax.scatter(df[x_clm].loc[idx_nonnan],df[y_clm].loc[idx_nonnan],\
                norm = norm, c= df[diff_clm].loc[idx_nonnan], cmap = cur_cmap,s = 2)
-    cur_ax.set_xlabel('# hops',fontsize=10)
-    cur_ax.set_ylabel('min',fontsize=10)
+    cur_ax.set_xlabel('# Hops',fontsize=10)
+    cur_ax.set_ylabel('Minutes',fontsize=10)
     cur_ax.tick_params(axis='both', labelsize=8,pad = 0.1)
     cur_ax.yaxis.set_label_position("right")
     cur_ax.yaxis.tick_right()

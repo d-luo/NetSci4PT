@@ -1,17 +1,15 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Feb 13 15:17:11 2019
+################################################################################
+# Module: methods.py
+# Description: Compute all the metrics and derive distributions
+# Ding Luo @ TU Delft, The Netherlands
+################################################################################
 
-@author: dingluo
-"""
+
 from __future__ import division
 import math
 import pandas as pd
 import numpy as np
 import networkx as nx
-import seaborn as sns;
-from network_loading import *
-from sklearn.preprocessing import scale
 from scipy import stats
 
 def compute_benchmark_metric(G_L,delta = 0.2):
@@ -139,6 +137,15 @@ def compute_GTCbased_metric(G,transfer_penalty=300,delta = 0.2):
     df = pd.DataFrame({'node_id':list(sp.keys()),'x':x_list,'y':y_list,\
                        'gtc':GTC_list,'ivt':IVT_list,'nonivt':NONIVT_list})               
     return df   
+
+def compute_gap_between_metrics(df,x_clm_name,y_clm_name,new_clm_name = 'gap'):
+    x = df[x_clm_name]
+    y = df[y_clm_name]
+    mask = ~np.isnan(x) & ~np.isnan(y)
+    slope, intercept, r_value, p_value, std_err = stats.linregress(x[mask],y[mask])
+    residuals = y - (slope * x + intercept)
+    df[new_clm_name] = residuals
+    return df,r_value 
 
 def derive_pdf_ccdf(data):
     '''

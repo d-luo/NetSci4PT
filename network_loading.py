@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
-###############################################################################
-# 
-# Author: Ding Luo @ TU Delft, The Netherlands
-###############################################################################
+################################################################################
+# Module: network_loading.py
+# Description: Load networks from CSV files
+# Ding Luo @ TU Delft, The Netherlands
+################################################################################
 
 import pandas as pd
 import networkx as nx
