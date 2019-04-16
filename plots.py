@@ -14,11 +14,19 @@ import networkx as nx
 import seaborn as sns;
 import numpy as np
 from geopy.distance import vincenty
+import pandas as pd
 
 
-
-def plot_violin_graph():
-    pass
+def plot_violin_graph(df_dict,ylabel_text):
+    violindf = pd.concat(list(df_dict.values()))
+    # Set up the matplotlib figure
+    f, ax = plt.subplots(figsize=(11, 5))
+    ax.set_axisbelow(True)
+    ax.grid(color='k', alpha=0.5, linestyle='--',linewidth=1)
+    orderlist=["Melbourne", "Milan",'Budapest','Vienna','Toronto','The Hague','Amsterdam','Zurich']
+    ax = sns.violinplot(x = 'cityname',y='gtc_nonivt',data = violindf,order=orderlist)
+    ax.set(xlabel='', ylabel=ylabel_text)
+    plt.savefig('violinplot.png', format='png', dpi=300)   
 
 
 def _add_spatial_scale(ax,df):
@@ -39,21 +47,23 @@ def _add_spatial_scale(ax,df):
 
 
 
-def plot_travel_impedance_map(G_L,df,cb_label,dist_x_label,with_dist,fig_para,city_name,save_pic):
+def plot_travel_impedance_map(G_L,df,clmstr,cb_label,dist_x_label,city_name,\
+                              embedded_dist = 'True',save_pic = 'True'):
     '''
     some parameters
     '''
     cmap_name = 'inferno_r'
     opacity_value = 0.7
+    fig_para = _set_fig_para()
     
     fig = plt.figure(figsize=(5,4))
     
     # select NonNaN rows
-    idx_nonnan = df['values'].notnull()
+    idx_nonnan = df[clmstr].notnull()
     lat_nonnan, lon_nonnan = df['y'].loc[idx_nonnan], df['x'].loc[idx_nonnan]
-    nonnan_values = df['values'].loc[idx_nonnan]
+    nonnan_values = df[clmstr].loc[idx_nonnan]
     # select NaN rows
-    idx_nan = df['values'].isnull()
+    idx_nan = df[clmstr].isnull()
     lat_nan, lon_nan = df['y'].loc[idx_nan], df['x'].loc[idx_nan]   
     # draw the underlying links first
     pos = nx.get_node_attributes(G_L,'coords')
@@ -77,7 +87,7 @@ def plot_travel_impedance_map(G_L,df,cb_label,dist_x_label,with_dist,fig_para,ci
     ax2.tick_params(labelsize = 9)
     cb = plt.colorbar(sc,cax = ax2)
     cb.set_label(cb_label,fontsize=10)
-    if with_dist:
+    if embedded_dist:
         # this is an inset axes over the main axes
         # ax3 is the distribution plot
         sns.set(font_scale=2)
@@ -198,6 +208,17 @@ def plot_network_properties():
                          data=df)
     ax.set(xlabel='# Stops', ylabel='# Links')
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)       
+    
+
+def _set_fig_para():
+    # figure parameters
+    fig_para = {}
+    fig_para['ax1'] = [0.015,0.01,0.68,0.8]
+    fig_para['ax2'] = [0.75,0.04,0.02,0.43]
+    fig_para['ax3'] = [0.67,0.6,0.24,0.28]
+    fig_para['node_size'] = 10    
+    return fig_para
+     
 
 class MidPointNorm(Normalize):    
     def __init__(self, midpoint=0, vmin=None, vmax=None, clip=False):

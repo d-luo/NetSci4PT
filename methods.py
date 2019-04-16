@@ -14,7 +14,7 @@ from network_loading import *
 from sklearn.preprocessing import scale
 from scipy import stats
 
-def compute_benchmark_metric(G_L,min_connected_nodes_perc):
+def compute_benchmark_metric(G_L,delta = 0.2):
     """
     Compute the benchmark travel impedance metric for all the stops
     
@@ -22,47 +22,39 @@ def compute_benchmark_metric(G_L,min_connected_nodes_perc):
     ----------
     G_L : networkx graph object
         unweighted L-space graph for a PTN
+    delta: fraction   
+        A parameter determining the minimum percentage of the number of nodes 
+        that should be connected to the rest of the network. If below this 
+        minimum, a node is not considered a usable one in the following analysis.     
 
-    min_connected_nodes_perc: float
-        a parameter to determine the minimum percentage of the number of nodes 
-        that should be connected to the rest of the network. When below this
-        minimum, a node is not considered a usable one in the following analysis. 
     Returns
     -------
-    result_dict : dict
-        a dictionary contains the metric value for each stop
+    df : dataframe
     
-    """
+    """ 
     result = list(nx.shortest_path_length(G_L))
-    farness_dict = {}
-    max_shortest_path_length = 0
-#    mean_shortest_path_length = round(nx.average_shortest_path_length(G),1)
+    temp_dict = {}
     num_nodes = G_L.number_of_nodes()
+
     for x in result:
-        max_shortest_path_length = max(max_shortest_path_length, max(x[1].values()))
         try:
-            if len(x[1]) > num_nodes * min_connected_nodes_perc:
+            if len(x[1]) > num_nodes * delta:
                 total = sum(x[1].values())
-                farness_dict[x[0]] = round(total/(len(x[1])-1),1)
+                temp_dict[x[0]] = round(total/(len(x[1])-1),1)
             else:
-                farness_dict[x[0]] = math.nan
+                temp_dict[x[0]] = math.nan
         except:
-            farness_dict[x[0]] = math.nan   
-    mean_shortest_path_length = round(np.nanmean(list(farness_dict.values())),1)    
+            temp_dict[x[0]] = math.nan   
     
     x_list = list(nx.get_node_attributes(G_L,'x').values())
     y_list = list(nx.get_node_attributes(G_L,'y').values())   
-    df = pd.DataFrame({'node_id':list(farness_dict.keys()),\
+    df = pd.DataFrame({'node_id':list(temp_dict.keys()),\
                        'x':x_list,\
                        'y':y_list,\
-                       'values':list(farness_dict.values())})        
-    result_dict = {}
-    result_dict['max_shortest_path_length'] = max_shortest_path_length
-    result_dict['mean_shortest_path_length'] = mean_shortest_path_length
-    result_dict['df'] = df           
-    return result_dict
+                       'hops':list(temp_dict.values())})                  
+    return df
 
-def compute_GTCbased_metric(G,transfer_penalty):
+def compute_GTCbased_metric(G,transfer_penalty=300,delta = 0.2):
     '''
     Compute the average travel impedance associated with each stop in the public
     transport network. The travel impedance is based on the generalized travel
@@ -74,7 +66,17 @@ def compute_GTCbased_metric(G,transfer_penalty):
     G: networkx graph object
         A weighted space-of-service graph (P-space)
     transfer_penalty: int 
-        A constant indicating the transfer penalty time of which unit is seconds   
+        A constant indicating the time-equivalent transfer penalty cost. 
+        The unit is second in this program
+    delta: fraction   
+        A parameter determining the minimum percentage of the number of nodes 
+        that should be connected to the rest of the network. If below this 
+        minimum, a node is not considered a usable one in the following analysis.         
+
+    Returns
+    -------
+    df: dataframe
+        
     '''  
 
     # shortest path 
@@ -92,7 +94,6 @@ def compute_GTCbased_metric(G,transfer_penalty):
         ti[key]['NONIVT'] = {}
     for source in sp.keys():
         for target in sp[source].keys():
-#            print(source,target)
             cur_sp = sp[source][target]
             ti[source]['GTC'][target] = 0
             ti[source]['IVT'][target] = 0
@@ -111,13 +112,10 @@ def compute_GTCbased_metric(G,transfer_penalty):
     IVT_list = []
     NONIVT_list = []
     num_nodes = G.number_of_nodes()
+
     for x in ti.keys():
         try:
-            # The minimum percentage of the number of nodes that should be connected 
-            # to the rest of the network. If below this minimum, a node is not considered 
-            # a usable one in the following analysis. 
-            min_connected_nodes_perc = 0.2
-            if len(ti[x]['GTC']) > num_nodes * min_connected_nodes_perc:
+            if len(ti[x]['GTC']) > num_nodes * delta:
                 tot_GTC = sum(ti[x]['GTC'].values())/60 # unit: minutes
                 tot_IVT = sum(ti[x]['IVT'].values())/60 # unit: minutes
                 tot_NONIVT = sum(ti[x]['NONIVT'].values())/60 # unit: minutes
@@ -138,10 +136,8 @@ def compute_GTCbased_metric(G,transfer_penalty):
     
     x_list = list(nx.get_node_attributes(G,'x').values())
     y_list = list(nx.get_node_attributes(G,'y').values())  
-
     df = pd.DataFrame({'node_id':list(sp.keys()),'x':x_list,'y':y_list,\
                        'gtc':GTC_list,'ivt':IVT_list,'nonivt':NONIVT_list})               
-        
     return df   
 
 def derive_pdf_ccdf(data):

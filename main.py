@@ -5,8 +5,7 @@ Created on Fri Oct 26 14:05:05 2018
 @author: dingluo
 """
 
-from __future__ import division
-import math
+
 import pandas as pd
 import networkx as nx
 from sklearn.preprocessing import scale
@@ -16,14 +15,58 @@ from network_loading import *
 from methods import *
 from plots import *
 
+def compute_all_networks():
+    transfer_penalty = 300
+    space_list = ['L','P']
+    # specify all the networks
+#    cities = {'amsterdam':'Amsterdam','milan':'Milan',\
+#              'denhaag':'The Hague', 'melbourne':'Melbourne',\
+#              'vienna':'Vienna','zurich':'Zurich',\
+#              'toronto':'Toronto','budapest':'Budapest'}
+    
+    cities = {'amsterdam':'Amsterdam'}
+    
+    # load all the networks
+    city_keys = list(cities.keys())
+    graphs = load_graphs(city_keys,space_list,transfer_penalty)
+    df_dict = {} # a dictionary containing all the results
+    for city_key in city_keys:
+        G_L = graphs[city_key]['L']
+        G_P = graphs[city_key]['P']
+        df_benchmark = compute_benchmark_metric(G_L)
+        df_GTC = compute_GTCbased_metric(G_P,transfer_penalty)  
+        
+        df_dict[city_key] = {}
+        df_dict[city_key]['L'] = G_L # This is for the sake of subsequent viz
+        df_dict[city_key]['df'] = pd.DataFrame({'node_id':df_GTC['node_id'],\
+                                 'x':df_GTC['x'],'y':df_GTC['y'],\
+                                 'hops':df_benchmark['hops'],\
+                                 'gtc_tot':df_GTC['gtc'],\
+                                 'gtc_ivt':df_GTC['ivt'],\
+                                 'gtc_nonivt':df_GTC['nonivt']})
+        df_dict[city_key]['cityname'] = cities[city_key]
+    return df_dict
+        
+def plot_all_travel_impedance_maps(df_dict):
+    for key in df_dict.keys():
+        G_L = df_dict[key]['L']
+        # plot the benchmark map
+        plot_travel_impedance_map(G_L,df_dict[key]['df'],'hops',\
+                                  '# hops','# hops',df_dict[key]['cityname'])      
+
+def plot_ccdf():
+    pass
+
+def plot_all_violin_graphs():
+    pass
 
 
 def gen_results_accessiblility_viz(graph_dict,city_list,city_names):
     '''
-    This function is responsible for generating three types of visualization
-      (1) Hop-based accessibility for all the stops in the network;
-      (2) GTC-based accessibility for all the stops in the network;
-      (3) Comparison between the two different kinds
+    This is the workflow to generate three types of visualization
+      (1) benchmark travel impedance map
+      (2) GTC-based travel impedance map
+      (3) Comparison map
     '''
     # figure parameters
     fig_para = {}
@@ -35,33 +78,32 @@ def gen_results_accessiblility_viz(graph_dict,city_list,city_names):
     with_dist = True
     # switch for whether the plot will be saved as a picture finally
     save_pic = True
+    transfer_penalty = 300
     
     for x in range(len(city_list)):
         cur_city = city_list[x]
         G_L = graph_dict[cur_city]['L']
         G_P = graph_dict[cur_city]['P']
         # hop-based computing solely using the unweighted L-space network       
-        result_dict_unweighted_L = compute_benchmark_metric(G_L,min_connected_nodes_perc)
+        df_benchmark = compute_benchmark_metric(G_L)
         # GTC-based computing solely using the weighted P-space network    
-        result_dict_weighted_P = compute_GTCbased_metric(G_P,transfer_penalty_cost,min_connected_nodes_perc)   
-        # combining two results for a final dataframe
-        final_df = pd.DataFrame({'node_id':result_dict_unweighted_L['df']['node_id'],\
-                                 'x':result_dict_unweighted_L['df']['x'],\
-                                 'y':result_dict_unweighted_L['df']['y'],\
-                                 'num_hops':result_dict_unweighted_L['df']['values'],\
-                                 'travel_time':result_dict_weighted_P['df']['values']})
+        df_GTC = compute_GTCbased_metric(G_P,transfer_penalty)   
         # hop-based benchmark
-        plot_travel_impedance_map(G_L,result_dict_unweighted_L['df'],\
-                          '# hops','# hops',with_dist,fig_para,city_names[cur_city],save_pic) 
-                          
+        plot_travel_impedance_map(G_L,df_benchmark,'hops','# hops','# hops',\
+                                  with_dist,fig_para,city_names[cur_city],save_pic)              
         # GTC-based                  
-        plot_travel_impedance_map(G_L,result_dict_weighted_P['df'],\
-                          'min','min',with_dist,fig_para,city_names[cur_city],save_pic)
-#        # Comparison    
-        final_df,r_value = add_linreg_residuals(final_df,'num_hops','travel_time','residual_of_hops')
-        plot_travel_impedance_comparison_map(G_L,final_df,r_value,fig_para,\
-                                             city_names[cur_city],'num_hops',\
-                                             'travel_time','residual_of_hops',save_pic) 
+        plot_travel_impedance_map(G_L,df_GTC,'gtc','min','min',\
+                                  with_dist,fig_para,city_names[cur_city],save_pic)
+        # Comparison    
+        # combining two results for a final dataframe
+        df_cmp = pd.DataFrame({'node_id':df_benchmark['node_id'],\
+                               'x':df_benchmark['x'],'y':df_benchmark['y'],\
+                               'hops':df_benchmark['values'],
+                               'gtc':df_GTC['gtc']})
+        df_cmp,r_value = add_linreg_residuals(df_cmp,'hops','gtc','residual_of_hops')
+        plot_travel_impedance_comparison_map(G_L,df_cmp,r_value,fig_para,\
+                                             city_names[cur_city],'hops',\
+                                             'gtc','residual_of_hops',save_pic) 
 
     
 def gen_results_accessiblity_ccdf(graph_dict,city_list,city_names):
@@ -104,25 +146,41 @@ def gen_results_accessiblity_ccdf(graph_dict,city_list,city_names):
    
     
 if __name__ == '__main__': 
+    # specify all the inputs first
+    cities = {'amsterdam':'Amsterdam','milan':'Milan',\
+              'denhaag':'The Hague', 'melbourne':'Melbourne',\
+              'vienna':'Vienna','zurich':'Zurich',\
+              'toronto':'Toronto','budapest':'Budapest'}
     
+    df_dict = compute_all_networks()
+    
+    plot_all_travel_impedance_maps(df_dict)
+#    plot_violin_graph(df_dict,'Cost of waiting and transfers')
 
-    # Initial parameters
-    min_connected_nodes_perc = 0.2
-    transfer_penalty_time = 300 # 300 seconds = 5 min
-#    city_names = {'amsterdam':'Amsterdam','milan':'Milan','denhaag':'The Hague',\
-#                  'melbourne':'Melbourne','vienna':'Vienna','zurich':'Zurich',\
-#                  'toronto':'Toronto','budapest':'Budapest'}
-#    city_names = {'melbourne':'Melbourne'}
-    
-    city_names = {'toronto':'Toronto'}
-
-    city_list = list(city_names.keys())
-    space_list = ['L','P']
-    graph_dict = load_graphs(city_list,space_list,transfer_penalty_time)
-    
-    G_P = graph_dict[city_list[0]]['P']
-    
-    df = compute_GTCbased_metric(G_P,transfer_penalty_time)
+#    # Initial parameters
+#    min_connected_nodes_perc = 0.2
+#    transfer_penalty_time = 300 # 300 seconds = 5 min
+#    # figure parameters
+#    fig_para = {}
+#    fig_para['ax1'] = [0.015,0.01,0.68,0.8]
+#    fig_para['ax2'] = [0.75,0.04,0.02,0.43]
+#    fig_para['ax3'] = [0.67,0.6,0.24,0.28]
+#    fig_para['node_size'] = 10 
+##    city_names = {'amsterdam':'Amsterdam','milan':'Milan','denhaag':'The Hague',\
+##                  'melbourne':'Melbourne','vienna':'Vienna','zurich':'Zurich',\
+##                  'toronto':'Toronto','budapest':'Budapest'}
+#    
+#    city_names = {'amsterdam':'Amsterdam'}
+#
+#    city_list = list(city_names.keys())
+#    space_list = ['L','P']
+#    graph_dict = load_graphs(city_list,space_list,transfer_penalty_time)
+#    G_L = graph_dict[city_list[0]]['L']
+#    G_P = graph_dict[city_list[0]]['P']
+#    
+#    df = compute_GTCbased_metric(G_P,transfer_penalty_time)
+#    plot_travel_impedance_map(G_L,df,'gtc','min','min','True',fig_para,city_names['amsterdam'],\
+#                              'True')
 #    gen_results_accessiblility_viz(graph_dict,city_list,city_names)
 #    
 #    df_dict ={}
@@ -146,15 +204,7 @@ if __name__ == '__main__':
 #        
 #    final_df = pd.concat(list(df_dict.values()))
 #    
-#    # Set up the matplotlib figure
-#    f, ax = plt.subplots(figsize=(11, 5))
-#    ax.set_axisbelow(True)
-#    ax.grid(color='k', alpha=0.5, linestyle='--',linewidth=1)
-#    ax = sns.violinplot(x = 'city',y='travel_time',data = final_df,
-#                        order=["Melbourne", "Milan",'Budapest','Vienna',
-#                               'Toronto','The Hague','Amsterdam','Zurich'])
-#    ax.set(xlabel='', ylabel='Generalized Travel Cost [min]')
-#    plt.savefig('violinplot.png', format='png', dpi=300)     
+  
     
 #    gen_results_accessiblility_viz(graph_dict,city_list,city_names)
  

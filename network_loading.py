@@ -46,7 +46,7 @@ def load_Lspace_graph(folder,city):
     print('The L-space graph of ' + city + ' has been loaded...')
     return G
  
-def load_Pspace_graph(folder_path,city,transfer_penalty_time):
+def load_Pspace_graph(folder_path,city,transfer_penalty):
     """
     Load the P-space graph stored in csv files into a networkx graph 
     
@@ -88,11 +88,11 @@ def load_Pspace_graph(folder_path,city,transfer_penalty_time):
                    wt = links.iloc[i]['WaitingTime'] * 60,\
                    total_travel_time = links.iloc[i]['TravelTime'] + \
                                        links.iloc[i]['WaitingTime'] * 60 + \
-                                       transfer_penalty_time)
+                                       transfer_penalty)
     print('The P-space graph of ' + city + ' has been loaded...')
     return G   
 
-def load_graphs(city_list,space_list,transfer_penalty_time):
+def load_graphs(city_list,space_list,transfer_penalty):
     folder_path = r'D:/dingluo/SURFdrive/research/4_codes/tramaccess/data/tram_graphs'
     graph_dict = {}
     
@@ -101,7 +101,7 @@ def load_graphs(city_list,space_list,transfer_penalty_time):
         if 'L' in space_list:
             graph_dict[city]['L'] = load_Lspace_graph(folder_path,city)
         if 'P' in space_list:    
-            graph_dict[city]['P'] = load_Pspace_graph(folder_path,city,transfer_penalty_time)
+            graph_dict[city]['P'] = load_Pspace_graph(folder_path,city,transfer_penalty)
         
     return graph_dict    
 
