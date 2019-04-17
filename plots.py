@@ -17,16 +17,24 @@ import numpy as np
 import pandas as pd
 
 
-def plot_violin_graph(df_dict,ylabel_text):
-    violindf = pd.concat(list(df_dict.values()))
+def plot_violin_graph(df_dict,clm_name,ylabel_text,title_text):
+    temp_dict = {}
+    
+    for key in df_dict.keys():
+#        del df_dict[key]['L']
+#        del df_dict[key]['r']
+#        del df_dict[key]['cityname']
+        temp_dict[key] = df_dict[key]['df']
+    
+    violindf = pd.concat(list(temp_dict.values()))
     # Set up the matplotlib figure
     f, ax = plt.subplots(figsize=(11, 5))
     ax.set_axisbelow(True)
     ax.grid(color='k', alpha=0.5, linestyle='--',linewidth=1)
     orderlist=["Melbourne", "Milan",'Budapest','Vienna','Toronto','The Hague','Amsterdam','Zurich']
-    ax = sns.violinplot(x = 'cityname',y='gtc_nonivt',data = violindf,order=orderlist)
-    ax.set(xlabel='', ylabel=ylabel_text)
-    plt.savefig('violinplot.png', format='png', dpi=300)   
+    ax = sns.violinplot(x = 'cityname',y=clm_name,data = violindf,order=orderlist)
+    ax.set(xlabel='', ylabel=ylabel_text, title = title_text)
+    plt.savefig(title_text +'.png', format='png', dpi=300)   
 
 
 def _add_spatial_scale(ax,df):
@@ -47,7 +55,7 @@ def _add_spatial_scale(ax,df):
 
 
 
-def plot_travel_impedance_map(G_L,df,clmstr,cb_label,dist_x_label,city_name,\
+def plot_travel_impedance_map(G_L,df,clmstr,cb_label,dist_x_label,title_text,\
                               embedded_dist = 'True',save_pic = 'True'):
     '''
     some parameters
@@ -73,7 +81,7 @@ def plot_travel_impedance_map(G_L,df,clmstr,cb_label,dist_x_label,city_name,\
     ax1.axis('off')
     ax1 = _add_spatial_scale(ax1,df)
     
-    ax1.set_title(city_name,loc = 'center')
+    ax1.set_title(title_text,loc = 'center')
     nx.draw_networkx_edges(G_L,pos,edge_color = '#b7c9e2',width=1,arrows=False,\
                            alpha = opacity_value,ax = ax1)                  
     # draw the NaN points 
@@ -103,13 +111,14 @@ def plot_travel_impedance_map(G_L,df,clmstr,cb_label,dist_x_label,city_name,\
         ax3.grid(color='k', alpha=0.5, linestyle='--',linewidth=1)
         
     if save_pic:
-        file_name = city_name + '_' + cb_label + '.png'
+        cityname = df['cityname'][0]
+        file_name = cityname + '_' + title_text + '.png'
         plt.savefig(file_name, format='png', dpi=300)
 
 
 
-def plot_travel_impedance_comparison_map(G_L,df,r_value,city_name,x_clm,y_clm,diff_clm,\
-                                         save_pic = 'True'):
+def plot_travel_impedance_comparison_map(G_L,df,r_value,x_clm,y_clm,diff_clm,
+                                         title_text,save_pic = 'True'):
     """
     Plot the map of the comparison between the benchmark and GTC-based metrics
     
@@ -135,7 +144,7 @@ def plot_travel_impedance_comparison_map(G_L,df,r_value,city_name,x_clm,y_clm,di
     ax1 = fig.add_axes(fig_para['ax1'])
     ax1.axis('off')
     ax1 = _add_spatial_scale(ax1,df)
-    ax1.set_title(city_name,loc = 'center')
+    ax1.set_title(title_text,loc = 'center')
 
     pos = nx.get_node_attributes(G_L,'coords')
     nx.draw_networkx_edges(G_L,pos,edge_color = '#b7c9e2',width=1,arrows=False,\
@@ -159,7 +168,8 @@ def plot_travel_impedance_comparison_map(G_L,df,r_value,city_name,x_clm,y_clm,di
     plot_scatter_comparison(df,r_value,ax3,x_clm,y_clm,diff_clm)
     
     if save_pic:
-        file_name = city_name + '_cmp.png'
+        cityname = df['cityname'][0]
+        file_name = cityname + '_' + title_text + '.png'
         plt.savefig(file_name, format='png', dpi=300)      
         
 def plot_scatter_comparison(df,r_value,cur_ax,x_clm,y_clm,diff_clm):
