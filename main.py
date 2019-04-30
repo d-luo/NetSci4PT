@@ -59,53 +59,10 @@ def plot_all_travel_impedance_maps(df_dict):
         plot_travel_impedance_comparison_map(G_L,df_dict[key]['df'],df_dict[key]['r'],
                                              'hops','gtc','gap','Comparison')                             
 
-
-
 def plot_all_violin_graphs(df_dict):
     plot_violin_graph(df_dict,'gtc','Minutes','Generalized travel cost')
     plot_violin_graph(df_dict,'gtc_ivt','Minutes','In-vehicle travel times')
     plot_violin_graph(df_dict,'gtc_nonivt','Minutes','Waiting and transfer times (with penalty)')
-
-def plot_ccdf():
-    pass
-
-    
-def gen_results_accessiblity_ccdf(graph_dict,city_list,city_names):
-    marker_list = ['s','o','v','p','*','<','+','p','d']
-    color_list = ['tab:purple','tab:blue','tab:green','r','c','m','tab:orange','k']
-    #---- hop-based accessibility
-    f1 = plt.figure()
-    for x in range(len(city_list)):
-        cur_city = city_list[x]
-        cur_cityname = city_names[cur_city]
-        G_L = graph_dict[cur_city]['L']
-        G_P = graph_dict[cur_city]['P']          
-        # computation       
-        result_by_hops = compute_hopbased_accessibility(G_L,min_connected_nodes_perc)
-        dist_dict = derive_pdf_ccdf(result_by_hops['df']['values'])
-        line, = plt.plot(dist_dict['variable'],dist_dict['ccdf'],'--',markersize=1,
-                 marker = marker_list[x],color = color_list[x],label = cur_cityname)
-        plt.legend(loc = 'upper right') 
-        plt.xlabel('# Hops')
-        plt.ylabel('Probability')
-    plt.savefig('ccdf_hop_based.png', format='png', dpi=300)    
-    
-    #---- GTC-based accessibility
-    f2 = plt.figure()
-    for x in range(len(city_list)):
-        cur_city = city_list[x]
-        cur_cityname = city_names[cur_city]
-        G_L = graph_dict[cur_city]['L']
-        G_P = graph_dict[cur_city]['P']          
-        # computation       
-        result_by_hops = compute_GTCbased_accessibility(G_P,transfer_penalty_cost,min_connected_nodes_perc)  
-        dist_dict = derive_pdf_ccdf(result_by_hops['df']['values'])
-        line, = plt.plot(dist_dict['variable'],dist_dict['ccdf'],'--',markersize=1,
-                 marker = marker_list[x],color = color_list[x],label = cur_cityname)
-        plt.legend(loc = 'upper right') 
-        plt.xlabel('Generalized Travel Cost [min]')
-        plt.ylabel('Probability')
-    plt.savefig('ccdf_GTC_based.png', format='png', dpi=300)  
 
    
     
