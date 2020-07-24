@@ -1,4 +1,4 @@
-# NetSci4PT
+# Public transport accessibility analysis using a network science approach
 
 The data set is available at https://data.mendeley.com/datasets/s3ckgmd2st/1
 
