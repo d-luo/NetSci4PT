@@ -2,4 +2,4 @@
 
 The data set is available at https://data.mendeley.com/datasets/s3ckgmd2st/1
 
-Please consider citing the paper: Luo, D., Cats, O., van Lint, H. & Currie, G. (2019) Integrating network science and public transport accessibility analysis for comparative assessment. Journal of Transport Geography, 80, 102505.
+Please consider citing the paper: Luo, D., Cats, O., van Lint, H. & Currie, G. (2019) [Integrating network science and public transport accessibility analysis for comparative assessment. Journal of Transport Geography, 80, 102505.](https://www.sciencedirect.com/science/article/abs/pii/S0966692319303680)
